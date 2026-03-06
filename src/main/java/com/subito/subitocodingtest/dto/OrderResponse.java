@@ -21,8 +21,6 @@ public class OrderResponse {
     private Long id;
     private OrderStatus status;
     private LocalDateTime insertDate;
-    private UserInfoResponse userInfo;
-    private ShippingInfoResponse shippingInfo;
     private BigDecimal totalPrice;
     private BigDecimal totalVat;
     private BigDecimal grandTotal;
@@ -33,8 +31,6 @@ public class OrderResponse {
         response.setId(order.getId());
         response.setStatus(order.getStatus());
         response.setInsertDate(order.getCreatedAt());
-        response.setUserInfo(UserInfoResponse.fromUserInfo(order.getUserInfo()));
-        response.setShippingInfo(ShippingInfoResponse.fromShippingInfo(order.getShippingInfo()));
         response.setTotalPrice(order.getTotalPrice());
         response.setTotalVat(order.getTotalVat());
         response.setGrandTotal(order.getGrandTotal());
@@ -69,4 +65,3 @@ public class OrderResponse {
         }
     }
 }
-

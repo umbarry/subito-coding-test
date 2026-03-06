@@ -6,7 +6,8 @@ import lombok.Getter;
 public enum ResourceType {
     ORDER("Order"),
     PRODUCT("Product"),
-    BASKET("Basket");
+    BASKET("Basket"),
+    BASKET_ITEM("Basket Item");
 
     private final String displayName;
 

@@ -6,6 +6,7 @@ import com.subito.subitocodingtest.exception.ResourceNotFoundException;
 import com.subito.subitocodingtest.exception.ResourceType;
 import com.subito.subitocodingtest.model.*;
 import com.subito.subitocodingtest.repository.*;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,22 +18,11 @@ import java.util.Optional;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class OrderService {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
-    private final UserInfoRepository userInfoRepository;
-    private final ShippingInfoRepository shippingInfoRepository;
     private final BasketRepository basketRepository;
-
-    public OrderService(OrderRepository orderRepository, ProductRepository productRepository,
-                        UserInfoRepository userInfoRepository, ShippingInfoRepository shippingInfoRepository,
-                        BasketRepository basketRepository) {
-        this.orderRepository = orderRepository;
-        this.productRepository = productRepository;
-        this.userInfoRepository = userInfoRepository;
-        this.shippingInfoRepository = shippingInfoRepository;
-        this.basketRepository = basketRepository;
-    }
 
     @Transactional
     public OrderResponse createOrder(CreateOrderRequest request) {
@@ -51,27 +41,16 @@ public class OrderService {
 
         Order order = new Order();
 
-        // Set user info
-        UserInfo userInfo = UserInfo.builder()
-                .firstName(request.getUserInfo().getFirstName())
-                .lastName(request.getUserInfo().getLastName())
-                .email(request.getUserInfo().getEmail())
-                .phoneNumber(request.getUserInfo().getPhoneNumber())
-                .build();
-        userInfoRepository.save(userInfo);
-        order.setUserInfo(userInfo);
-        log.debug("Created user info for email: {}", userInfo.getEmail());
-
-        // Set shipping info
-        ShippingInfo shippingInfo = ShippingInfo.builder()
-                .street(request.getShippingInfo().getStreet())
-                .city(request.getShippingInfo().getCity())
-                .postalCode(request.getShippingInfo().getPostalCode())
-                .country(request.getShippingInfo().getCountry())
-                .build();
-        shippingInfoRepository.save(shippingInfo);
-        order.setShippingInfo(shippingInfo);
-        log.debug("Created shipping info for city: {}", shippingInfo.getCity());
+        // Set user and shipping info directly on order
+        order.setName(request.getName());
+        order.setLastName(request.getLastName());
+        order.setEmail(request.getEmail());
+        order.setPhoneNumber(request.getPhoneNumber());
+        order.setStreet(request.getStreet());
+        order.setCity(request.getCity());
+        order.setPostalCode(request.getPostalCode());
+        order.setCountry(request.getCountry());
+        log.debug("Set user and shipping info for order: {} {} {} {} {} {} {} {}", request.getName(), request.getLastName(), request.getEmail(), request.getPhoneNumber(), request.getStreet(), request.getCity(), request.getPostalCode(), request.getCountry());
 
         // Process items from basket and update product availability
         for (BasketItem basketItem : basket.getItems()) {
@@ -137,4 +116,3 @@ public class OrderService {
         return OrderResponse.fromOrder(order.get());
     }
 }
-

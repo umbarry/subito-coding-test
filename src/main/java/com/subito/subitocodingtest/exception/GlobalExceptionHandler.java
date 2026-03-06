@@ -1,7 +1,9 @@
 package com.subito.subitocodingtest.exception;
 
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -36,6 +38,20 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
+        StringBuilder message = new StringBuilder();
+        ex.getBindingResult().getFieldErrors().forEach(error -> {
+            message.append(error.getField())
+                   .append(": ")
+                   .append(error.getDefaultMessage())
+                   .append("; ");
+        });
+        ErrorResponse errorResponse = new ErrorResponse(
+                message.toString(),
+                "Validation Error"
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
 }
-
-

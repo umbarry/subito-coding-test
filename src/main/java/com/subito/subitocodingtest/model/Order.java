@@ -2,6 +2,7 @@ package com.subito.subitocodingtest.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,17 +31,39 @@ public class Order extends AuditableEntity {
     @Enumerated(EnumType.STRING)
     private OrderStatus status = OrderStatus.INSERTED;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "user_info_id", nullable = false)
-    @Valid
-    @NotNull(message = "User info cannot be null")
-    private UserInfo userInfo;
+    // User info fields
+    @Column(nullable = false)
+    @NotBlank(message = "Name cannot be blank")
+    private String name;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "shipping_info_id", nullable = false)
-    @Valid
-    @NotNull(message = "Shipping info cannot be null")
-    private ShippingInfo shippingInfo;
+    @Column(nullable = false)
+    @NotBlank(message = "Last name cannot be blank")
+    private String lastName;
+
+    @Column(nullable = false)
+    @NotBlank(message = "Email cannot be blank")
+    private String email;
+
+    @Column(nullable = false)
+    @NotBlank(message = "Phone number cannot be blank")
+    private String phoneNumber;
+
+    // Shipping info fields
+    @Column(nullable = false)
+    @NotBlank(message = "Street cannot be blank")
+    private String street;
+
+    @Column(nullable = false)
+    @NotBlank(message = "City cannot be blank")
+    private String city;
+
+    @Column(nullable = false)
+    @NotBlank(message = "Postal code cannot be blank")
+    private String postalCode;
+
+    @Column(nullable = false)
+    @NotBlank(message = "Country cannot be blank")
+    private String country;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<OrderItem> items = new ArrayList<>();
@@ -73,4 +96,3 @@ public class Order extends AuditableEntity {
         }
     }
 }
-

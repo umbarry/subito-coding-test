@@ -80,20 +80,31 @@ public class BasketService {
         Basket basket = basketOpt.get();
         Product product = productOpt.get();
 
-        BasketItem basketItem = BasketItem.builder()
-                .basket(basket)
-                .product(product)
-                .quantity(itemRequest.getQuantity())
-                .build();
+        int available = product.getAvailableItems();
+        int requested = itemRequest.getQuantity();
 
-        // if already in basket then update quantity
+        // Check if already in basket
         Optional<BasketItem> existingItemOpt = basket.getItems().stream()
                 .filter(item -> item.getProduct().getId().equals(product.getId()))
                 .findFirst();
 
+        int currentBasketQuantity = existingItemOpt.map(BasketItem::getQuantity).orElse(0);
+        int newTotalQuantity = currentBasketQuantity + requested;
+
+        if (newTotalQuantity > available) {
+            log.warn("Requested quantity {} exceeds available stock {} for product {}", newTotalQuantity, available, product.getId());
+            throw new IllegalArgumentException("Requested quantity exceeds available stock for product: " + product.getName());
+        }
+
+        BasketItem basketItem = BasketItem.builder()
+                .basket(basket)
+                .product(product)
+                .quantity(requested)
+                .build();
+
         if (existingItemOpt.isPresent()) {
             BasketItem existingItem = existingItemOpt.get();
-            existingItem.setQuantity(existingItem.getQuantity() + itemRequest.getQuantity());
+            existingItem.setQuantity(newTotalQuantity);
             log.debug("Product already in basket, updated quantity to {}", existingItem.getQuantity());
         } else {
             basket.addItem(basketItem);
@@ -105,8 +116,8 @@ public class BasketService {
     }
 
     @Transactional
-    public BasketResponse removeItemFromBasket(Long basketId, Long basketItemId) {
-        log.info("Removing item {} from basket ID: {}", basketItemId, basketId);
+    public BasketResponse removeItemFromBasket(Long basketId, Long productId) {
+        log.info("Removing item {} from basket ID: {}", productId, basketId);
 
         Optional<Basket> basketOpt = basketRepository.findById(basketId);
         if (basketOpt.isEmpty()) {
@@ -115,9 +126,26 @@ public class BasketService {
         }
 
         Basket basket = basketOpt.get();
-        basket.getItems().removeIf(item -> item.getId().equals(basketItemId));
+        Optional<BasketItem> itemOpt = basket.getItems().stream()
+            .filter(item -> item.getProduct().getId().equals(productId))
+            .findFirst();
+
+        if (itemOpt.isPresent()) {
+            BasketItem item = itemOpt.get();
+            if (item.getQuantity() > 1) {
+                item.setQuantity(item.getQuantity() - 1);
+                log.debug("Decreased quantity for product {}. New quantity: {}", productId, item.getQuantity());
+            } else {
+                basket.getItems().remove(item);
+                log.debug("Removed item {} from basket as quantity reached 0", productId);
+            }
+        } else {
+            log.warn("Product in the basket not found with ID: {}", productId);
+            throw new ResourceNotFoundException(ResourceType.BASKET_ITEM, productId);
+        }
+
         Basket savedBasket = basketRepository.save(basket);
-        log.debug("Item removed. Basket now contains {} items", savedBasket.getItems().size());
+        log.debug("Item removed or quantity decreased. Basket now contains {} items", savedBasket.getItems().size());
         return BasketResponse.fromBasket(savedBasket);
     }
 
@@ -133,4 +161,3 @@ public class BasketService {
         log.debug("Basket deleted successfully");
     }
 }
-

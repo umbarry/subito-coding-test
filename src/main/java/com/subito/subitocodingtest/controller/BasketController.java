@@ -29,16 +29,16 @@ public class BasketController {
         return basketService.getBaskets(userId, status);
     }
 
-    @PostMapping("/{basketId}/items")
+    @PostMapping("/{basketId}/products")
     public BasketResponse addItemToBasket(@PathVariable Long basketId,
                                           @Valid @RequestBody BasketItemRequest itemRequest) {
         return basketService.addItemToBasket(basketId, itemRequest);
     }
 
-    @DeleteMapping("/{basketId}/items/{basketItemId}")
+    @DeleteMapping("/{basketId}/products/{productId}")
     public BasketResponse removeItemFromBasket(@PathVariable Long basketId,
-                                               @PathVariable Long basketItemId) {
-        return basketService.removeItemFromBasket(basketId, basketItemId);
+                                               @PathVariable Long productId) {
+        return basketService.removeItemFromBasket(basketId, productId);
     }
 
     @DeleteMapping("/{basketId}")
