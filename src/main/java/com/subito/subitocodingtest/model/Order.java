@@ -26,6 +26,10 @@ public class Order extends AuditableEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @OneToOne
+    @JoinColumn(name = "basket_id")
+    private Basket basket;
+
     @Column(nullable = false)
     @NotNull(message = "Status cannot be null")
     @Enumerated(EnumType.STRING)

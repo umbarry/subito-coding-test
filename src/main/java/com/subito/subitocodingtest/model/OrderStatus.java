@@ -2,11 +2,10 @@ package com.subito.subitocodingtest.model;
 
 public enum OrderStatus {
     INSERTED("Inserted"),
-    PENDING("Pending"),
-    CONFIRMED("Confirmed"),
+    PAID("Paid"),
     SHIPPED("Shipped"),
     DELIVERED("Delivered"),
-    CANCELLED("Cancelled");
+    EXPIRED("Expired");
 
     private final String displayName;
 
@@ -18,4 +17,3 @@ public enum OrderStatus {
         return displayName;
     }
 }
-

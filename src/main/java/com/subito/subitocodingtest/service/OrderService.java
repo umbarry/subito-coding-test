@@ -2,17 +2,20 @@ package com.subito.subitocodingtest.service;
 
 import com.subito.subitocodingtest.dto.CreateOrderRequest;
 import com.subito.subitocodingtest.dto.OrderResponse;
+import com.subito.subitocodingtest.events.OrderExpirationEvent;
 import com.subito.subitocodingtest.exception.ResourceNotFoundException;
 import com.subito.subitocodingtest.exception.ResourceType;
 import com.subito.subitocodingtest.model.*;
 import com.subito.subitocodingtest.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,23 +26,29 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final BasketRepository basketRepository;
+    private final KafkaProducerService kafkaProducerService;
+
+    @Value("${order.expiration.time.hours}")
+    private int orderExpirationTimeHours;
 
     @Transactional
     public OrderResponse createOrder(CreateOrderRequest request) {
-        String userId = request.getUserId();
-        log.info("Creating order for userId: {}", userId);
+        Long basketId = request.getBasketId();
+        log.info("Creating order for basketId: {}", basketId);
 
         // Retrieve pending basket for user
-        List<Basket> basketList = basketRepository.findByUserIdAndStatus(userId, BasketStatus.PENDING);
-        if (basketList.isEmpty() || basketList.get(0).getItems().isEmpty()) {
-            log.warn("Pending basket is empty or not found for userId: {}", userId);
-            throw new IllegalArgumentException("No pending basket found for user: " + userId);
+        Basket basket = basketRepository.findById(basketId)
+                .orElseThrow(() -> new ResourceNotFoundException(ResourceType.BASKET, basketId));
+
+        if (basket.getStatus() != BasketStatus.PENDING || basket.getItems().isEmpty()) {
+            log.warn("Basket is not pending or is empty for basketId: {}", basketId);
+            throw new IllegalArgumentException("Basket is not pending or is empty for basketId: " + basketId);
         }
 
-        Basket basket = basketList.get(0);
-        log.debug("Found pending basket ID: {} with {} items for userId: {}", basket.getId(), basket.getItems().size(), userId);
+        log.debug("Found pending basket ID: {} with {} items", basket.getId(), basket.getItems().size());
 
         Order order = new Order();
+        order.setBasket(basket);
 
         // Set user and shipping info directly on order
         order.setName(request.getName());
@@ -114,5 +123,25 @@ public class OrderService {
 
         log.debug("Order found with {} items", order.get().getItems().size());
         return OrderResponse.fromOrder(order.get());
+    }
+
+    @Transactional
+    public void expireUnpaidOrders() {
+        LocalDateTime expirationTime = LocalDateTime.now().minusHours(orderExpirationTimeHours);
+        List<Order> unpaidOrders = orderRepository.findByStatusAndCreatedAtBefore(OrderStatus.INSERTED, expirationTime);
+
+        for (Order order : unpaidOrders) {
+            log.info("Expiring order with ID: {}", order.getId());
+            order.setStatus(OrderStatus.EXPIRED);
+
+            for (OrderItem item : order.getItems()) {
+                Product product = item.getProduct();
+                product.setAvailableItems(product.getAvailableItems() + item.getQuantity());
+                productRepository.save(product);
+            }
+
+            orderRepository.save(order);
+            kafkaProducerService.sendOrderExpiration(new OrderExpirationEvent(order.getId(), order.getEmail()));
+        }
     }
 }

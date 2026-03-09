@@ -14,8 +14,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateOrderRequest {
-    @NotNull(message = "User ID cannot be null")
-    private String userId;
+    @NotNull(message = "Basket ID cannot be null")
+    private Long basketId;
 
     // Flattened user info fields
     @NotBlank(message = "Name cannot be blank")

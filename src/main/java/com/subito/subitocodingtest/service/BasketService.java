@@ -3,6 +3,7 @@ package com.subito.subitocodingtest.service;
 import com.subito.subitocodingtest.dto.BasketItemRequest;
 import com.subito.subitocodingtest.dto.BasketResponse;
 import com.subito.subitocodingtest.exception.BasketAlreadyExistsException;
+import com.subito.subitocodingtest.exception.BasketStatusException;
 import com.subito.subitocodingtest.exception.ResourceNotFoundException;
 import com.subito.subitocodingtest.exception.ResourceType;
 import com.subito.subitocodingtest.model.Basket;
@@ -65,20 +66,16 @@ public class BasketService {
     public BasketResponse addItemToBasket(Long basketId, BasketItemRequest itemRequest) {
         log.info("Adding item to basket ID: {} - Product ID: {}, Quantity: {}", basketId, itemRequest.getProductId(), itemRequest.getQuantity());
 
-        Optional<Basket> basketOpt = basketRepository.findById(basketId);
-        if (basketOpt.isEmpty()) {
-            log.warn("Basket not found with ID: {}", basketId);
-            throw new ResourceNotFoundException(ResourceType.BASKET, basketId);
+        Basket basket = basketRepository.findById(basketId)
+                .orElseThrow(() -> new ResourceNotFoundException(ResourceType.BASKET, basketId));
+
+        if (basket.getStatus() != BasketStatus.PENDING) {
+            log.warn("Basket with ID {} is not in PENDING state. Current state: {}", basketId, basket.getStatus());
+            throw new BasketStatusException(basketId, basket.getStatus());
         }
 
-        Optional<Product> productOpt = productRepository.findById(itemRequest.getProductId());
-        if (productOpt.isEmpty()) {
-            log.warn("Product not found with ID: {}", itemRequest.getProductId());
-            throw new ResourceNotFoundException(ResourceType.PRODUCT, itemRequest.getProductId());
-        }
-
-        Basket basket = basketOpt.get();
-        Product product = productOpt.get();
+        Product product = productRepository.findById(itemRequest.getProductId())
+                .orElseThrow(() -> new ResourceNotFoundException(ResourceType.PRODUCT, itemRequest.getProductId()));
 
         int available = product.getAvailableItems();
         int requested = itemRequest.getQuantity();
@@ -96,17 +93,16 @@ public class BasketService {
             throw new IllegalArgumentException("Requested quantity exceeds available stock for product: " + product.getName());
         }
 
-        BasketItem basketItem = BasketItem.builder()
-                .basket(basket)
-                .product(product)
-                .quantity(requested)
-                .build();
-
         if (existingItemOpt.isPresent()) {
             BasketItem existingItem = existingItemOpt.get();
             existingItem.setQuantity(newTotalQuantity);
             log.debug("Product already in basket, updated quantity to {}", existingItem.getQuantity());
         } else {
+            BasketItem basketItem = BasketItem.builder()
+                    .basket(basket)
+                    .product(product)
+                    .quantity(requested)
+                    .build();
             basket.addItem(basketItem);
         }
 
@@ -119,13 +115,14 @@ public class BasketService {
     public BasketResponse removeItemFromBasket(Long basketId, Long productId) {
         log.info("Removing item {} from basket ID: {}", productId, basketId);
 
-        Optional<Basket> basketOpt = basketRepository.findById(basketId);
-        if (basketOpt.isEmpty()) {
-            log.warn("Basket not found with ID: {}", basketId);
-            throw new ResourceNotFoundException(ResourceType.BASKET, basketId);
+        Basket basket = basketRepository.findById(basketId)
+                .orElseThrow(() -> new ResourceNotFoundException(ResourceType.BASKET, basketId));
+
+        if (basket.getStatus() != BasketStatus.PENDING) {
+            log.warn("Basket with ID {} is not in PENDING state. Current state: {}", basketId, basket.getStatus());
+            throw new BasketStatusException(basketId, basket.getStatus());
         }
 
-        Basket basket = basketOpt.get();
         Optional<BasketItem> itemOpt = basket.getItems().stream()
             .filter(item -> item.getProduct().getId().equals(productId))
             .findFirst();
