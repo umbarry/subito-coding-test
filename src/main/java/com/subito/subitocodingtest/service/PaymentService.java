@@ -52,6 +52,9 @@ public class PaymentService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException(ResourceType.ORDER, orderId));
 
+        // TODO:chek payment amount with order price
+        //if(!order.getTotalPrice().equals())
+
         Payment payment = Payment.builder()
                 .paymentId(paymentId)
                 .order(order)

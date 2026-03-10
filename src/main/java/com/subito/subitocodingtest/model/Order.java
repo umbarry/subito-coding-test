@@ -72,6 +72,9 @@ public class Order extends AuditableEntity {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<OrderItem> items = new ArrayList<>();
 
+    @Column
+    private String trackingUrl;
+
     public BigDecimal getTotalPrice() {
         return items.stream()
                 .map(OrderItem::getPrice)

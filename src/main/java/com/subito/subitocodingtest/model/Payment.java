@@ -26,7 +26,4 @@ public class Payment extends AuditableEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PaymentStatus status;
-
-    @Column(nullable = false)
-    private boolean notificationSent = false;
 }

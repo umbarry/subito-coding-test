@@ -21,7 +21,4 @@ public abstract class AuditableEntity {
     @Column(nullable = false, updatable = false)
     @CreationTimestamp
     private LocalDateTime createdAt;
-
-    @Version
-    private Long version;
 }

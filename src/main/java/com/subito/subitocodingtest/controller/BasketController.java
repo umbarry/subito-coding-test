@@ -5,18 +5,16 @@ import com.subito.subitocodingtest.dto.BasketResponse;
 import com.subito.subitocodingtest.model.BasketStatus;
 import com.subito.subitocodingtest.service.BasketService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/v1/users/{userId}/baskets")
+@RequiredArgsConstructor
 public class BasketController {
     private final BasketService basketService;
-
-    public BasketController(BasketService basketService) {
-        this.basketService = basketService;
-    }
 
     @PostMapping
     public BasketResponse createBasket(@PathVariable String userId) {

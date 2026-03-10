@@ -1,14 +1,13 @@
 package com.subito.subitocodingtest.model;
 
-public enum OrderStatus {
-    INSERTED("Inserted"),
-    PAID("Paid"),
-    SHIPPED("Shipped"),
-    EXPIRED("Expired");
+public enum NotificationType {
+    PAYMENT_CONFIRMATION("Payment Confirmation"),
+    ORDER_EXPIRATION("Order Expiration"),
+    ORDER_SHIPPED("Order Shipped");
 
     private final String displayName;
 
-    OrderStatus(String displayName) {
+    NotificationType(String displayName) {
         this.displayName = displayName;
     }
 
@@ -16,3 +15,4 @@ public enum OrderStatus {
         return displayName;
     }
 }
+

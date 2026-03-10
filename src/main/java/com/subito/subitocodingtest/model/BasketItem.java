@@ -16,7 +16,7 @@ import java.math.RoundingMode;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-public class BasketItem {
+public class BasketItem extends AuditableEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

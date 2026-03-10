@@ -3,6 +3,7 @@ package com.subito.subitocodingtest.service;
 import com.subito.subitocodingtest.dto.CreateOrderRequest;
 import com.subito.subitocodingtest.dto.OrderResponse;
 import com.subito.subitocodingtest.events.OrderExpirationEvent;
+import com.subito.subitocodingtest.events.OrderShippedEvent;
 import com.subito.subitocodingtest.exception.ResourceNotFoundException;
 import com.subito.subitocodingtest.exception.ResourceType;
 import com.subito.subitocodingtest.model.*;
@@ -28,8 +29,8 @@ public class OrderService {
     private final BasketRepository basketRepository;
     private final KafkaProducerService kafkaProducerService;
 
-    @Value("${order.expiration.time.hours}")
-    private int orderExpirationTimeHours;
+    @Value("${order.expiration.time.minutes}")
+    private int orderExpirationTimeMinutes;
 
     @Transactional
     public OrderResponse createOrder(CreateOrderRequest request) {
@@ -127,7 +128,7 @@ public class OrderService {
 
     @Transactional
     public void expireUnpaidOrders() {
-        LocalDateTime expirationTime = LocalDateTime.now().minusHours(orderExpirationTimeHours);
+        LocalDateTime expirationTime = LocalDateTime.now().minusMinutes(orderExpirationTimeMinutes);
         List<Order> unpaidOrders = orderRepository.findByStatusAndCreatedAtBefore(OrderStatus.INSERTED, expirationTime);
 
         for (Order order : unpaidOrders) {
@@ -143,5 +144,29 @@ public class OrderService {
             orderRepository.save(order);
             kafkaProducerService.sendOrderExpiration(new OrderExpirationEvent(order.getId(), order.getEmail()));
         }
+    }
+
+    @Transactional
+    public OrderResponse shipOrder(Long orderId, String trackingUrl) {
+        log.info("Shipping order with ID: {} with tracking URL: {}", orderId, trackingUrl);
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException(ResourceType.ORDER, orderId));
+
+        if (order.getStatus() != OrderStatus.PAID) {
+            log.warn("Cannot ship order ID: {} with status: {}", orderId, order.getStatus());
+            throw new IllegalArgumentException("Order must be PAID to be shipped. Current status: " + order.getStatus());
+        }
+
+        // Update order status and set tracking URL
+        order.setStatus(OrderStatus.SHIPPED);
+        order.setTrackingUrl(trackingUrl);
+        Order shippedOrder = orderRepository.save(order);
+        log.info("Order ID: {} marked as SHIPPED with tracking URL: {}", orderId, trackingUrl);
+
+        // Send order shipped event
+        kafkaProducerService.sendOrderShipped(new OrderShippedEvent(order.getId(), order.getEmail(), trackingUrl));
+
+        return OrderResponse.fromOrder(shippedOrder);
     }
 }

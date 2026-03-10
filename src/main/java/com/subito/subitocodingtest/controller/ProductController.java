@@ -4,18 +4,16 @@ import com.subito.subitocodingtest.dto.ProductRequest;
 import com.subito.subitocodingtest.dto.ProductResponse;
 import com.subito.subitocodingtest.service.ProductService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/v1/products")
 public class ProductController {
     private final ProductService productService;
-
-    public ProductController(ProductService productService) {
-        this.productService = productService;
-    }
 
     @PostMapping
     public ProductResponse createProduct(@Valid @RequestBody ProductRequest request) {
