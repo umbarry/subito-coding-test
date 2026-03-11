@@ -3,6 +3,7 @@ package com.subito.subitocodingtest.service;
 import com.subito.subitocodingtest.events.OrderExpirationEvent;
 import com.subito.subitocodingtest.events.OrderShippedEvent;
 import com.subito.subitocodingtest.events.PaymentConfirmationEvent;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class KafkaProducerServiceImpl implements KafkaProducerService {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
@@ -22,10 +24,6 @@ public class KafkaProducerServiceImpl implements KafkaProducerService {
 
     @Value("${topic.order.expiration}")
     private String expirationTopic;
-
-    public KafkaProducerServiceImpl(KafkaTemplate<String, Object> kafkaTemplate) {
-        this.kafkaTemplate = kafkaTemplate;
-    }
 
     @Override
     public void sendPaymentConfirmation(PaymentConfirmationEvent event) {

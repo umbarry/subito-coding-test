@@ -10,6 +10,7 @@ import com.subito.subitocodingtest.model.Payment;
 import com.subito.subitocodingtest.repository.NotificationRepository;
 import com.subito.subitocodingtest.repository.OrderRepository;
 import com.subito.subitocodingtest.repository.PaymentRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -20,20 +21,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class KafkaConsumerServiceImpl implements KafkaConsumerService {
 
     private final JavaMailSender mailSender;
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
     private final NotificationRepository notificationRepository;
-
-    public KafkaConsumerServiceImpl(JavaMailSender mailSender, PaymentRepository paymentRepository,
-                               OrderRepository orderRepository, NotificationRepository notificationRepository) {
-        this.mailSender = mailSender;
-        this.paymentRepository = paymentRepository;
-        this.orderRepository = orderRepository;
-        this.notificationRepository = notificationRepository;
-    }
 
     @Override
     @KafkaListener(topics = "${topic.payment.confirmation}", groupId = "${spring.kafka.consumer.group-id}")

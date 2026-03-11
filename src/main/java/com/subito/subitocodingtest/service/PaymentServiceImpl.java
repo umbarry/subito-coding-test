@@ -12,25 +12,20 @@ import com.subito.subitocodingtest.model.PaymentStatus;
 import com.subito.subitocodingtest.repository.OrderRepository;
 import com.subito.subitocodingtest.repository.PaymentRepository;
 import io.jsonwebtoken.*;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class PaymentServiceImpl implements PaymentService {
 
     private final OrderRepository orderRepository;
     private final PaymentRepository paymentRepository;
     private final JwtService jwtService;
     private final KafkaProducerService kafkaProducerService;
-
-    public PaymentServiceImpl(OrderRepository orderRepository, PaymentRepository paymentRepository, JwtService jwtService, KafkaProducerService kafkaProducerService) {
-        this.orderRepository = orderRepository;
-        this.paymentRepository = paymentRepository;
-        this.jwtService = jwtService;
-        this.kafkaProducerService = kafkaProducerService;
-    }
 
     @Override
     @Transactional
@@ -49,9 +44,6 @@ public class PaymentServiceImpl implements PaymentService {
 
             Order order = orderRepository.findById(orderId)
                     .orElseThrow(() -> new ResourceNotFoundException(ResourceType.ORDER, orderId));
-
-            // TODO:chek payment amount with order price
-            //if(!order.getTotalPrice().equals())
 
             Payment payment = Payment.builder()
                     .paymentId(paymentId)

@@ -6,6 +6,7 @@ import com.subito.subitocodingtest.exception.ResourceNotFoundException;
 import com.subito.subitocodingtest.exception.ResourceType;
 import com.subito.subitocodingtest.model.Product;
 import com.subito.subitocodingtest.repository.ProductRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,12 +17,9 @@ import java.util.Optional;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
-
-    public ProductServiceImpl(ProductRepository productRepository) {
-        this.productRepository = productRepository;
-    }
 
     @Override
     @Transactional

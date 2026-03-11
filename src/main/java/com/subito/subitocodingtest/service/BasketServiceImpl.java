@@ -12,6 +12,7 @@ import com.subito.subitocodingtest.model.BasketStatus;
 import com.subito.subitocodingtest.model.Product;
 import com.subito.subitocodingtest.repository.BasketRepository;
 import com.subito.subitocodingtest.repository.ProductRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,14 +23,10 @@ import java.util.Optional;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class BasketServiceImpl implements BasketService {
     private final BasketRepository basketRepository;
     private final ProductRepository productRepository;
-
-    public BasketServiceImpl(BasketRepository basketRepository, ProductRepository productRepository) {
-        this.basketRepository = basketRepository;
-        this.productRepository = productRepository;
-    }
 
     @Override
     @Transactional
