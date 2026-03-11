@@ -80,13 +80,13 @@ class ProductControllerTest {
 
     @Test
     void getAllProducts_shouldReturnPagedProducts() throws Exception {
-        Product p1 = productRepository.save(Product.builder()
+        productRepository.save(Product.builder()
                 .name("Product 1")
                 .netPrice(BigDecimal.valueOf(10.0))
                 .availableItems(5)
                 .vatPercentage(BigDecimal.valueOf(22.0))
                 .build());
-        Product p2 = productRepository.save(Product.builder()
+        productRepository.save(Product.builder()
                 .name("Product 2")
                 .netPrice(BigDecimal.valueOf(20.0))
                 .availableItems(10)

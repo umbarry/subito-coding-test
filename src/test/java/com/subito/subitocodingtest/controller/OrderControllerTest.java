@@ -54,8 +54,6 @@ class OrderControllerTest {
     @MockitoBean
     private KafkaProducerServiceImpl kafkaProducerService;
 
-
-    private Product product;
     private Basket basket;
 
     @BeforeEach
@@ -64,7 +62,7 @@ class OrderControllerTest {
         orderRepository.deleteAll();
         productRepository.deleteAll();
 
-        product = Product.builder()
+        Product product = Product.builder()
                 .name("Test Product")
                 .netPrice(BigDecimal.TEN)
                 .vatPercentage(BigDecimal.TEN)
