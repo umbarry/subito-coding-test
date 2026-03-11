@@ -41,10 +41,10 @@ class OrderServiceTest {
     private BasketRepository basketRepository;
 
     @Mock
-    private KafkaProducerService kafkaProducerService;
+    private KafkaProducerServiceImpl kafkaProducerService;
 
     @InjectMocks
-    private OrderService orderService;
+    private OrderServiceImpl orderService;
 
     private Product product;
     private Basket basket;

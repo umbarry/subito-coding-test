@@ -34,7 +34,7 @@ class BasketServiceTest {
     private ProductRepository productRepository;
 
     @InjectMocks
-    private BasketService basketService;
+    private BasketServiceImpl basketService;
 
     private Product product;
 

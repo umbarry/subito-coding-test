@@ -31,13 +31,13 @@ class PaymentServiceTest {
     private PaymentRepository paymentRepository;
 
     @Mock
-    private PaymentService.JwtService jwtService;
+    private JwtServiceImpl jwtService;
 
     @Mock
     private KafkaProducerService kafkaProducerService;
 
     @InjectMocks
-    private PaymentService paymentService;
+    private PaymentServiceImpl paymentService;
 
     @Test
     void processPayment_shouldUpdateOrderStatusToPaidWhenPaymentIsAccepted() {
