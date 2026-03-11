@@ -15,6 +15,8 @@ This project is a simplified version of a purchase cart service. It provides a R
 *   **MailHog:** For testing email sending
 *   **Docker:** For containerization
 
+**NOTE**: this project assume that **user authentication and authorization** is managed externally.
+
 ## Requirements for Running
 
 To run this project, you need to have Docker and Docker Compose installed on your machine.
@@ -119,9 +121,12 @@ Both the payment webhook and the Kafka consumers are idempotent.
 
 The API provides an endpoint for shipping an order. When an order is shipped, the order status is updated to `SHIPPED`, and a tracking URL is associated with the order.
 
-## Running tests
+## Running tests and generate coverage report
 
 1.  Build and run the tests using docker:
     ```bash
-    cd scripts && sh tests.sh
+    cd scripts
+    sh tests.sh
     ```
+After runnning the tests, a **coverage report** will be available at: ./jacoco-report/index.html
+(generated using **jacoco**)
