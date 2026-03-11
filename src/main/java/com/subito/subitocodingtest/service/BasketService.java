@@ -102,6 +102,8 @@ public class BasketService {
                     .basket(basket)
                     .product(product)
                     .quantity(requested)
+                    .price(product.getNetPrice())
+                    .vat(product.getVatPercentage())
                     .build();
             basket.addItem(basketItem);
         }

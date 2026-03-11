@@ -2,7 +2,7 @@
 set -e
 
 echo "Running tests in Docker container..."
-docker build -t subito-test .
-docker run --rm subito-test mvn test
+docker build --rm -t subito-test -f ../DockerfileTest ../
+docker rmi subito-test
 echo "Tests completed successfully!"
 

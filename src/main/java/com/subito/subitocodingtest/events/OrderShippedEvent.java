@@ -14,4 +14,3 @@ public class OrderShippedEvent extends OrderEvent {
     private String userEmail;
     private String trackingUrl;
 }
-

@@ -1,6 +1,8 @@
 package com.subito.subitocodingtest.service;
 
 import com.subito.subitocodingtest.events.PaymentConfirmationEvent;
+import com.subito.subitocodingtest.exception.PaymentAlreadyExistsException;
+import com.subito.subitocodingtest.exception.PaymentTokenException;
 import com.subito.subitocodingtest.exception.ResourceNotFoundException;
 import com.subito.subitocodingtest.exception.ResourceType;
 import com.subito.subitocodingtest.model.Order;
@@ -9,8 +11,7 @@ import com.subito.subitocodingtest.model.Payment;
 import com.subito.subitocodingtest.model.PaymentStatus;
 import com.subito.subitocodingtest.repository.OrderRepository;
 import com.subito.subitocodingtest.repository.PaymentRepository;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -38,35 +39,40 @@ public class PaymentService {
 
     @Transactional
     public void processPayment(String token) {
-        Claims claims = jwtService.parseToken(token);
+        try {
+            Claims claims = jwtService.parseToken(token);
 
-        String paymentId = claims.get("paymentId", String.class);
-        Long orderId = claims.get("orderId", Long.class);
-        boolean paymentAccepted = claims.get("paymentAccepted", Boolean.class);
+            String paymentId = claims.get("paymentId", String.class);
+            Long orderId = claims.get("orderId", Long.class);
+            boolean paymentAccepted = claims.get("paymentAccepted", Boolean.class);
 
-        if (paymentRepository.findByPaymentId(paymentId).isPresent()) {
-            log.info("Payment with ID {} has already been processed.", paymentId);
-            return;
-        }
+            if (paymentRepository.findByPaymentId(paymentId).isPresent()) {
+                log.info("Payment with ID {} has already been processed.", paymentId);
+                throw new PaymentAlreadyExistsException("Payment with ID " + paymentId + " has already been processed.");
+            }
 
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException(ResourceType.ORDER, orderId));
+            Order order = orderRepository.findById(orderId)
+                    .orElseThrow(() -> new ResourceNotFoundException(ResourceType.ORDER, orderId));
 
-        // TODO:chek payment amount with order price
-        //if(!order.getTotalPrice().equals())
+            // TODO:chek payment amount with order price
+            //if(!order.getTotalPrice().equals())
 
-        Payment payment = Payment.builder()
-                .paymentId(paymentId)
-                .order(order)
-                .status(paymentAccepted ? PaymentStatus.ACCEPTED : PaymentStatus.REJECTED)
-                .build();
+            Payment payment = Payment.builder()
+                    .paymentId(paymentId)
+                    .order(order)
+                    .status(paymentAccepted ? PaymentStatus.ACCEPTED : PaymentStatus.REJECTED)
+                    .build();
 
-        paymentRepository.save(payment);
+            paymentRepository.save(payment);
 
-        if (paymentAccepted) {
-            order.setStatus(OrderStatus.PAID);
-            orderRepository.save(order);
-            kafkaProducerService.sendPaymentConfirmation(new PaymentConfirmationEvent(paymentId, order.getId(), order.getEmail()));
+            if (paymentAccepted) {
+                order.setStatus(OrderStatus.PAID);
+                orderRepository.save(order);
+                kafkaProducerService.sendPaymentConfirmation(new PaymentConfirmationEvent(paymentId, order.getId(), order.getEmail()));
+            }
+        } catch (SignatureException | ExpiredJwtException | MalformedJwtException | UnsupportedJwtException e) {
+            // Firma non matcha JWT_SECRET_WEBHOOK
+            throw new PaymentTokenException("Invalid JWT signature");
         }
     }
 

@@ -2,7 +2,7 @@
 set -e
 
 echo "Starting Subito Order Service with Docker Compose..."
-docker-compose up -d
+docker compose up -d
 echo "Service is running!"
 echo "API available at http://localhost:8080"
 echo "Database: PostgreSQL at localhost:5432"

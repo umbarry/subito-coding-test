@@ -79,6 +79,7 @@ services:
       SPRING_KAFKA_CONSUMER_AUTO_OFFSET_RESET: earliest
       SPRING_MAIL_HOST: mailhog
       SPRING_MAIL_PORT: 1025
+      WEBHOOK_JWTSECRET: subitoisthebest_subitoisthebest_
     networks:
       - subito-network
 

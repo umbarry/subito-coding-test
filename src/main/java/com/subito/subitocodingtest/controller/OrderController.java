@@ -26,7 +26,6 @@ public class OrderController {
 
     @PostMapping("/{orderId}/ship")
     public OrderResponse shipOrder(@PathVariable Long orderId, @Valid @RequestBody ShipOrderRequest request) {
-        return orderService.shipOrder(orderId, request.getTrackingUrl());
+        return orderService.shipOrder(orderId, request);
     }
 }
-

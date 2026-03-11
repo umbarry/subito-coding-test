@@ -1,326 +1,127 @@
-# Subito Order Service
+# Subito Coding Test
 
-A RESTful order management service built with Spring Boot, JPA/Hibernate, and PostgreSQL. This service allows users to create orders from a set of products and retrieve detailed order information including pricing and VAT calculations.
+This project is a simplified version of a purchase cart service. It provides a RESTful API for managing products, baskets, and orders.
 
-## Features
+## Technologies Used
 
-- Create orders with multiple items
-- Calculate total price, VAT, and grand total
-- View detailed item breakdown with individual prices and VAT
-- Persistent data storage with PostgreSQL
-- Full Docker support with Docker Compose
-- Comprehensive test suite with H2 in-memory database
+*   **Java:** 17
+*   **Spring Boot:** 4.0.3
+*   **Spring Data JPA:** For database access
+*   **PostgreSQL:** As the primary database
+*   **Kafka:** For event-driven communication
+*   **Flyway:** For database migrations
+*   **Lombok:** To reduce boilerplate code
+*   **JWT:** For secure communication with the payment webhook
+*   **MailHog:** For testing email sending
+*   **Docker:** For containerization
 
-## Project Structure
+## Requirements for Running
 
-```
-subito-coding-test/
-├── src/
-│   ├── main/
-│   │   ├── java/com/subito/subitocodingtest/
-│   │   │   ├── model/          # Entity models (Order, OrderItem, Product)
-│   │   │   ├── dto/            # Data Transfer Objects
-│   │   │   ├── repository/     # JPA repositories
-│   │   │   ├── service/        # Business logic
-│   │   │   ├── controller/     # REST endpoints
-│   │   │   └── SubitoCodingTestApplication.java
-│   │   └── resources/
-│   │       └── application.properties
-│   └── test/
-│       ├── java/com/subito/subitocodingtest/
-│       │   └── SubitoCodingTestApplicationTests.java
-│       └── resources/
-│           └── application-test.properties
-├── scripts/
-│   ├── tests.sh       # Run tests in Docker
-│   └── run.sh         # Start the service with Docker Compose
-├── Dockerfile
-├── docker-compose.yml
-└── pom.xml
-```
+To run this project, you need to have Docker and Docker Compose installed on your machine.
 
-## Database Schema
+## Running the Project
 
-### Products Table
-```sql
-CREATE TABLE products (
-    id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    price NUMERIC(19,2) NOT NULL,
-    vat_percentage NUMERIC(19,2) NOT NULL
-);
-```
+1.  Clone the repository:
+    ```bash
+    git clone https://github.com/your-username/subito-coding-test.git
+    ```
+2.  Navigate to the project directory:
+    ```bash
+    cd subito-coding-test
+    ```
+3.  Build and run the application using Docker Compose:
+    ```bash
+    cd scripts && sh run.sh
+    ```
+The application will be available at `http://localhost:8080`.
 
-### Orders Table
-```sql
-CREATE TABLE orders (
-    id BIGSERIAL PRIMARY KEY
-);
-```
+## OpenAPI Documentation
 
-### Order Items Table
-```sql
-CREATE TABLE order_items (
-    id BIGSERIAL PRIMARY KEY,
-    order_id BIGINT NOT NULL REFERENCES orders(id),
-    product_id BIGINT NOT NULL REFERENCES products(id),
-    quantity INTEGER NOT NULL,
-    price NUMERIC(19,2) NOT NULL,
-    vat NUMERIC(19,2) NOT NULL
-);
-```
+The OpenAPI documentation is available at the following link:
 
-## Prerequisites
+[openapi.yml](src/main/resources/openapi.yml)
 
-- Docker and Docker Compose
-- OR Java 17+ and Maven 3.9.6+
+You can also access the Swagger UI at `http://localhost:8080/swagger-ui.html`.
 
-## Quick Start with Docker
+## Basket Management and Order Inserting
 
-### Start the Service
+The API provides endpoints for managing baskets and creating orders.
 
-```bash
-./scripts/run.sh
-```
+*   **Basket Management:** You can create a basket for a user, add items to it, and remove items from it. A basket is considered `PENDING` until an order is created from it.
+*   **Order Inserting:** You can create an order from a `PENDING` basket. When an order is created, the basket is marked as `COMPLETED`, and the product availability is updated.
 
-This will:
-1. Build the Docker image
-2. Start PostgreSQL database
-3. Start the Spring Boot application
-4. Database will be automatically initialized with schema
+## Payment Management with Webhook
 
-The API will be available at `http://localhost:8080`
+Payment is managed asynchronously via a webhook. When an order is created, it has the status `INSERTED`. To simulate a payment, you can use the payment webhook.
 
-### Run Tests in Docker
+The webhook expects a JWT in a query string parameter called `token`. The JWT should contain the following claims:
 
-```bash
-./scripts/tests.sh
-```
+*   `sub`: The user identifier
+*   `paymentId`: A unique identifier for the payment.
+*   `paymentAccepted`: A boolean indicating whether the payment was accepted or rejected.
 
-This will:
-1. Build the Docker image
-2. Run the complete test suite
-3. Report test results
+Here is an example of a JWT header amd payload:
 
-### Stop the Service
-
-```bash
-docker-compose down
-```
-
-## Running Locally (without Docker)
-
-### Prerequisites
-- PostgreSQL running on localhost:5432
-- Database: `subito_db`
-- User: `postgres`
-- Password: `postgres`
-
-### Build and Run
-
-```bash
-mvn clean package
-mvn spring-boot:run
-```
-
-### Run Tests
-
-```bash
-mvn test
-```
-
-## API Endpoints
-
-### Create Order
-
-**POST** `/api/orders`
-
-Creates a new order with specified items.
-
-**Request Example:**
+**header:**
 ```json
 {
-  "items": [
-    {
-      "productId": 1,
-      "quantity": 2
-    },
-    {
-      "productId": 2,
-      "quantity": 1
-    }
-  ]
+  "alg": "HS256",
+  "typ": "JWT"
+}
+
+```
+**payload:**
+```json
+{
+  "sub": "user123",
+  "paymentId": "pay_abc123XYZ789",
+  "orderId": 1,
+  "paymentAccepted": true,
+  "iat": 1773183929,
+  "exp": 1804719870
 }
 ```
 
-**Response Example (201 Created):**
-```json
-{
-  "id": 1,
-  "totalPrice": 2050.00,
-  "totalVat": 451.00,
-  "grandTotal": 2501.00,
-  "items": [
-    {
-      "productId": 1,
-      "productName": "Laptop",
-      "quantity": 2,
-      "unitPrice": 1000.00,
-      "price": 2000.00,
-      "vat": 440.00,
-      "total": 2440.00
-    },
-    {
-      "productId": 2,
-      "productName": "Mouse",
-      "quantity": 1,
-      "unitPrice": 25.00,
-      "price": 25.00,
-      "vat": 5.50,
-      "total": 30.50
-    }
-  ]
-}
+You can create a jwt using https://www.jwt.io tool with `subitoisthebest_subitoisthebest_`
+as secret (defined as **environment variable** in `docker-compose.yml`)
+or use the following:
+```
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyMTIzIiwicGF5bWVudElkIjoicGF5X2FiYzEyM1hZWjc4OSIsIm9yZGVySWQiOjEsInBheW1lbnRBY2NlcHRlZCI6dHJ1ZSwiaWF0IjoxNzczMTgzOTI5LCJleHAiOjE4MDQ3MTk4NzB9.6ffO1jZk4v7K47Foj-HonbdUqbzLqjOFVhEby5KqTZc
 ```
 
-### Get Order
 
-**GET** `/api/orders/{orderId}`
+When the webhook receives a valid JWT, it updates the order status to `PAID` if the payment was accepted.
 
-Retrieves the details of an existing order.
+## Expired Orders Cron Task
 
-**Response Example (200 OK):**
-Same format as Create Order response.
+A scheduled task runs every minute to expire unpaid orders. An order is considered unpaid if it has the status `INSERTED` and is older than a configurable amount of time (default is 1 hour).
 
-## Testing the API
+When an order expires, the following actions are taken:
 
-### Using curl
+*   The order status is updated to `EXPIRED`.
+*   The **product availability is restored**.
+*   A Kafka event is sent to **notify the user** that their order has expired.
 
-```bash
-# Create an order
-curl -X POST http://localhost:8080/api/orders \
-  -H "Content-Type: application/json" \
-  -d '{"items":[{"productId":1,"quantity":2}]}'
+## Kafka Events and Email Notifications
 
-# Get an order (replace {orderId} with actual ID)
-curl http://localhost:8080/api/orders/1
-```
+The application uses Kafka for event-driven communication. When a payment is successfully processed or an order expires, a Kafka event is sent. A Kafka consumer listens for these events and sends an email notification to the user.
 
-### Using httpie
+You can view the emails sent by the application in MailHog at `http://localhost:8025`.
 
-```bash
-# Create an order
-http POST http://localhost:8080/api/orders items:='[{"productId":1,"quantity":2}]'
+### Idempotency
 
-# Get an order
-http http://localhost:8080/api/orders/1
-```
+Both the payment webhook and the Kafka consumers are idempotent.
 
-## Architecture
+*   **Payment Webhook:** The webhook checks for an existing payment with the same `paymentId` before processing a new one. This prevents duplicate processing.
+*   **Kafka Consumers:** The consumers use optimistic locking to prevent duplicate processing of the same event. The `notificationSent` flag on the `Payment` and `Order` entities is updated before sending the email. If the update fails due to a concurrent update, the email is not sent.
 
-### Model Layer
-- **Product**: Represents a product with price and VAT percentage
-- **Order**: Represents an order containing multiple order items
-- **OrderItem**: Represents an item in an order with quantity and calculated price/VAT
+## Ship Endpoint
 
-### Service Layer
-- **OrderService**: Handles business logic for order creation and retrieval
-  - Validates products exist
-  - Calculates totals and VAT
-  - Manages order persistence
+The API provides an endpoint for shipping an order. When an order is shipped, the order status is updated to `SHIPPED`, and a tracking URL is associated with the order.
 
-### Repository Layer
-- **OrderRepository**: JPA repository for Order entity
-- **ProductRepository**: JPA repository for Product entity
+## Running tests
 
-### Controller Layer
-- **OrderController**: REST endpoints for order operations
-
-## Configuration
-
-### Application Properties (PostgreSQL)
-Located at `src/main/resources/application.properties`
-
-```properties
-spring.datasource.url=jdbc:postgresql://db:5432/subito_db
-spring.datasource.username=postgres
-spring.datasource.password=postgres
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
-```
-
-### Test Configuration (H2 In-Memory)
-Located at `src/test/resources/application-test.properties`
-
-Uses H2 in-memory database for fast, isolated testing without requiring PostgreSQL.
-
-## Dependencies
-
-- **Spring Boot 4.0.3**: Web framework
-- **Spring Data JPA**: ORM abstraction
-- **Hibernate**: JPA implementation
-- **PostgreSQL Driver**: Database connectivity
-- **Lombok**: Reduce boilerplate code
-- **H2 Database**: In-memory database for testing
-
-## Error Handling
-
-- **400 Bad Request**: Invalid product ID or missing required fields
-- **404 Not Found**: Order or product not found
-- **201 Created**: Successfully created order
-- **200 OK**: Successfully retrieved order
-
-## Development
-
-### Project Structure Best Practices
-
-- Clean separation of concerns (Model, DTO, Service, Repository, Controller)
-- Dependency injection via constructor
-- Transaction management with `@Transactional`
-- Proper entity lifecycle management
-
-### Testing Strategy
-
-- Unit tests with embedded H2 database
-- Integration tests using Spring Boot Test context
-- Comprehensive test coverage for order calculations
-- Error scenarios covered
-
-## Troubleshooting
-
-### Database Connection Issues
-
-Ensure PostgreSQL is running and accessible:
-```bash
-docker-compose logs db
-```
-
-### Port Conflicts
-
-If port 8080 is already in use, modify `docker-compose.yml`:
-```yaml
-ports:
-  - "8081:8080"  # Maps localhost:8081 to container:8080
-```
-
-### Build Issues
-
-Clean and rebuild:
-```bash
-mvn clean
-mvn build
-```
-
-## Future Enhancements
-
-- Product search and filtering
-- Order status tracking
-- Order update and cancellation
-- User authentication and authorization
-- API documentation with Swagger/OpenAPI
-- Batch order operations
-- Order history and analytics
-
-## License
-
-Simplified version of a purchase cart service for Subito coding test.
+1.  Build and run the tests using docker:
+    ```bash
+    cd scripts && sh tests.sh
+    ```

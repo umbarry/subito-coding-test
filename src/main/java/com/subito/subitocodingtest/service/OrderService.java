@@ -2,6 +2,7 @@ package com.subito.subitocodingtest.service;
 
 import com.subito.subitocodingtest.dto.CreateOrderRequest;
 import com.subito.subitocodingtest.dto.OrderResponse;
+import com.subito.subitocodingtest.dto.ShipOrderRequest;
 import com.subito.subitocodingtest.events.OrderExpirationEvent;
 import com.subito.subitocodingtest.events.OrderShippedEvent;
 import com.subito.subitocodingtest.exception.ResourceNotFoundException;
@@ -147,25 +148,25 @@ public class OrderService {
     }
 
     @Transactional
-    public OrderResponse shipOrder(Long orderId, String trackingUrl) {
-        log.info("Shipping order with ID: {} with tracking URL: {}", orderId, trackingUrl);
+    public OrderResponse shipOrder(Long orderId, ShipOrderRequest request) {
+        log.info("Shipping order with ID: {} with tracking URL: {}", orderId, request.getTrackingUrl());
 
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException(ResourceType.ORDER, orderId));
 
         if (order.getStatus() != OrderStatus.PAID) {
             log.warn("Cannot ship order ID: {} with status: {}", orderId, order.getStatus());
-            throw new IllegalArgumentException("Order must be PAID to be shipped. Current status: " + order.getStatus());
+            throw new IllegalStateException("Order must be PAID to be shipped. Current status: " + order.getStatus());
         }
 
         // Update order status and set tracking URL
         order.setStatus(OrderStatus.SHIPPED);
-        order.setTrackingUrl(trackingUrl);
+        order.setTrackingUrl(request.getTrackingUrl());
         Order shippedOrder = orderRepository.save(order);
-        log.info("Order ID: {} marked as SHIPPED with tracking URL: {}", orderId, trackingUrl);
+        log.info("Order ID: {} marked as SHIPPED with tracking URL: {}", orderId, request.getTrackingUrl());
 
         // Send order shipped event
-        kafkaProducerService.sendOrderShipped(new OrderShippedEvent(order.getId(), order.getEmail(), trackingUrl));
+        kafkaProducerService.sendOrderShipped(new OrderShippedEvent(order.getId(), order.getEmail(), request.getTrackingUrl()));
 
         return OrderResponse.fromOrder(shippedOrder);
     }
